@@ -4,3 +4,4 @@
 *.DS_Store
 *.pyc
 *.gguf
+account_info.py

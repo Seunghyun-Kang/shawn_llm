@@ -12,7 +12,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 import os
 import requests
-import account_info
+import account_info as account_info
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -112,47 +112,34 @@ class InstagramCrawler:
                 continue
 
             self.driver.get(post_link)
+            time.sleep(1) # 인스타 속이기 용
             
             try:
                 WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, 'img')))
-                # time.sleep(2)
+                time.sleep(1) # 인스타 속이기 용
             except Exception as e:
                 logging.warning(f"Timeout waiting for images in post: {post_link}")
                 self.logout_instagram()
                 # self.crawl_targets(account_info.INSTAGRAM_USERNAME2, account_info.INSTAGRAM_PASSWORD2)  # Need to add change account
                 continue
             
-            image_index = 0
+            img_links = set()
             while True:
                 try:
                     images = self.driver.find_elements(By.TAG_NAME, 'img')
+                    photo_by_images_url = [image.get_attribute('src') or image.get_attribute('data-srcset') for image in images if image.get_attribute('alt') and ("Photo by" or "Photo shared") in image.get_attribute('alt')]
                     image_found = False
-                    
-                    for i, image in enumerate(images):
+                    for url in photo_by_images_url:
                         try:
-                            alt_text = image.get_attribute('alt')
-                            if alt_text and "Photo by" in alt_text:
-                                img_url = image.get_attribute('src') or image.get_attribute('data-srcset')
-                                if img_url:
-                                    if not img_url.startswith('data:image'):
-                                        if not img_url.startswith('http'):
-                                            img_url = urljoin(post_link, img_url)
-                                        img_data = requests.get(img_url).content
-                                        with open(os.path.join(shortcode_folder, f'{shortcode}_{image_index}.jpg'), 'wb') as handler:
-                                            handler.write(img_data)
-                                        logging.info(f"Downloaded {shortcode}_{image_index}.jpg")
-                                        image_index += 1
-                                        image_found = True
-                                        if image_index > 0:
-                                            continue
-                                        break
+                            if url:
+                                img_links.add(url)
+                                image_found = True
                         except Exception as e:
                             logging.warning(f"Error processing image in post: {post_link} - {e}")
                     
                     if not image_found:
                         logging.info(f"No more images found for post: {post_link}")
-                        break
-                
+                        break 
                     # "다음" 버튼을 클릭하여 다음 이미지로 이동
                     try:
                         next_button = self.driver.find_element(By.XPATH, '//button[@aria-label="다음" or @aria-label="Next" or @aria-label="next"]')
@@ -160,10 +147,17 @@ class InstagramCrawler:
                         time.sleep(2)  # 페이지가 로드될 시간을 주기 위해 잠시 대기
                     except Exception as e:
                         break
-                
+
                 except Exception as e:
                     logging.warning(f"Error processing post: {post_link} - {e}")
                     break
+
+            for i, url in enumerate(img_links):
+                url = urljoin(post_link, url)
+                img_data = requests.get(url).content
+                with open(os.path.join(shortcode_folder, f'{shortcode}_{i}.jpg'), 'wb') as handler:
+                    handler.write(img_data)
+                logging.info(f"Downloaded {shortcode}_{i}.jpg")
             
             # 게시글 텍스트 다운로드
             try:

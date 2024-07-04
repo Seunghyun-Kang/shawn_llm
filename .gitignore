@@ -5,3 +5,6 @@
 *.pyc
 *.gguf
 account_info.py
+instagram_images/
+picuki_images/
+images/

@@ -40,9 +40,7 @@ class StableDiffusionXL:
                 image=latent_image
             ).images[0]
 
-            # 이미지 저장
-            refined_image.save(output_image_path)
-            print(f"Image saved at {output_image_path}")
-
+            return refined_image
+            
         except Exception as e:
             print(f"An error occurred: {e}")

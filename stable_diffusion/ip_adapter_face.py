@@ -18,7 +18,7 @@ class FaceIDGenerator:
         self.app.prepare(ctx_id=0, det_size=(640, 640))
         base_model_path = "SG161222/Realistic_Vision_V4.0_noVAE"
         vae_model_path = "stabilityai/sd-vae-ft-mse"
-        ip_ckpt = "./ip_adapter_face_id/ip-adapter-faceid-portrait_sd15.bin"
+        ip_ckpt = "./ip_adapter_face_id/ip-adapter-faceid-plusv2_sdxl.bin"
         
         self.noise_scheduler = DDIMScheduler(
             num_train_timesteps=1000,

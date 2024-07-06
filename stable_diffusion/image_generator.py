@@ -2,34 +2,36 @@
 from stable_diffusion_xl import StableDiffusionXL
 from aura import ImageUpscaler
 from ip_adapter_face import FaceIDGenerator
+from datetime import datetime
+from PIL import Image
 
 image_url = "base.jpg"
-negative_prompt = "disfigured, ugly, bad, immature, cartoon, anime, 3d, painting, b&w, extra head, extra legs, extra arms, extra body"
+negative_prompt = "low quality, bad quality, strange, blurr,extra head, extra leg, extra hand"
+negative_embedding_path = "./negative_embedding/ng_deepnegative_v1_75t.pt"
 
-# output_image_path = "./output/generated_image.png"
-# prompt = "Make her stand up, big tits, same lighting and high-end camera quality, rim lighting, looking at the camera, ultra quality, sharp focus, tack sharp, dof, film grain, 8K UHD, high detailed skin, high detailed skin, skin pores, like real insta-worthy"
+output_image_path = "./output/generated_image.png"
+prompt = "beautiful korean girl, big tits, model, sexy, black hair, black eye, high quality"
 
 
-# # 1. image generator
-# sd_xl = StableDiffusionXL()
-# refined_image = sd_xl.generate_image(prompt, negative_prompt,
-#                      num_inference_steps=30, high_noise_frac=0.8)
+# 1. image generator
+lora_paths = [
+    # './LoRA/real_korean/koreanDollLikeness_v15.safetensors', 
+    './LoRA/real_korean/korean.safetensors', 
+    # './LoRA/real_korean/realskin.safetensors'
+    './LoRA/shadow/casting shadow style v2.safetensors'
+    
+    ]
+
+controlnet_paths = ["./controlnet/ip-adapter_xl.pth"]
+control_images = [Image.open("base.jpg")]
+
+generator = StableDiffusionXL(lora_paths, image_url)
+generated_images = generator.generate_images(prompt, negative_prompt, num_images=5)
 
 # 이미지 저장
-# refined_image.save(output_image_path)
-# print(f"Image saved at {output_image_path}")
-
-# ////////////////////////////////////////////////////////////////////////
-# IPAdapterFace 클래스 초기화
-# ip_adapter = IPAdapterFace()
-# # 이미지 생성
-# prompt = "Apply the face to the base image with a smiling expression"
-# base_image_path = "./base.jpg"
-# face_image_path = "./face.png"
-# output_image_path = "./output/output_image.png"
-
-# ip_adapter.generate_image(base_image_path, face_image_path, prompt,
-#                           num_inference_steps=30, output_image_path=output_image_path)
+for i, img in enumerate(generated_images):
+    current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+    img.save(f"./output/generated_image_{current_time}_{i}.png")
 
 # ////////////////////////////////////////////////////////////////////////
 #Upscaler usage
@@ -47,23 +49,23 @@ negative_prompt = "disfigured, ugly, bad, immature, cartoon, anime, 3d, painting
 #//////////////////////////////////////////////////////////////////////////////
 #Adapter usage
 
-face_model = "jiwon"
+# face_model = "jiwon"
 
-generator = FaceIDGenerator()
-faceid_embeds = generator.get_face_embeddings(face_model)
+# generator = FaceIDGenerator()
+# faceid_embeds = generator.get_face_embeddings(face_model)
 
-prompt = "photo of Asian girl with black eyes, wearing dress at the beach"
+# prompt = "photo of Asian girl with black eyes, wearing dress at the beach"
 
-images = generator.generate_images(
-    prompt=prompt, 
-    negative_prompt=negative_prompt, 
-    faceid_embeds=faceid_embeds, 
-    num_samples=4,
-    num_inference_steps=30, 
-    seed=2023
-)
+# images = generator.generate_images(
+#     prompt=prompt, 
+#     negative_prompt=negative_prompt, 
+#     faceid_embeds=faceid_embeds, 
+#     num_samples=4,
+#     num_inference_steps=30, 
+#     seed=2023
+# )
 
-for i, img in enumerate(images):
-    output_image_path = f"./output/ip_adapter_{i}.jpg"
-    img.save(output_image_path)
-    print(f"Image saved at {output_image_path}")
+# for i, img in enumerate(images):
+#     output_image_path = f"./output/ip_adapter_{i}.jpg"
+#     img.save(output_image_path)
+#     print(f"Image saved at {output_image_path}")

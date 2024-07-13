@@ -57,12 +57,11 @@ class ImageSelector:
         
         return renamed_images
     
-    def pick_random_from_arrays(arrays):
+    def pick_random_from_arrays(self, arrays):
     # 배열 중 하나를 랜덤으로 선택
         chosen_array = random.choice(arrays)
         # 선택된 배열에서 다시 하나의 문자열을 랜덤으로 선택
-        chosen_string = random.choice(chosen_array)
-        return chosen_string
+        return chosen_array
 
 folder_path = "D:\\shawnlab"
 caption_list =[

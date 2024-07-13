@@ -25,6 +25,7 @@ class InstagramUploader:
         self.driver = self.initialize_driver()
 
     def basic_seeker(self, paths, type='click'):
+        element = None
         for path in paths:
             try:
                 # 요소가 클릭 가능해질 때까지 기다림
@@ -44,7 +45,7 @@ class InstagramUploader:
     def initialize_driver(self):
         logging.info("Initializing the Chrome driver.")
         chrome_options = Options()
-        # chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--headless")
         chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
@@ -79,7 +80,7 @@ class InstagramUploader:
             password_input.send_keys(self.password)
             password_input.send_keys(Keys.RETURN)
             # 로그인 후 Instagram 로고가 보일 때까지 대기
-            time.sleep(5)
+            time.sleep(10)
             logging.info("Logged in to Instagram.")
             self.driver.implicitly_wait(3)
 
@@ -100,24 +101,12 @@ class InstagramUploader:
                 self.driver.quit()
 
     def upload(self, images, caption):
+        logging.info(f"caption: {caption}")
         upload_btn_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[2]/div/div[1]/div/div/div/div/div[2]/div[7]/div/span/div/a/div"
         select_file_xpaths = [
             "/html/body/div[7]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div[2]/div/button",
             "/html/body/div[6]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div[2]/div/button",
             "/html/body/div[5]/div[1]/div/div/3/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div[2]/div/button"
-        ]
-        select_multiple_btn_xpaths= [
-            "/html/body/div[7]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div/div[3]/div/div[2]/div/button/div",
-            "/html/body/div[6]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div/div[3]/div/div[2]/div/button/div",
-            "/html/body/div[5]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div/div[3]/div/div[2]/div/button/div"
-        ]
-        add_additional_photo_btn_xpaths= [
-            "/html/body/div[7]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div/div[3]/div/div[1]/div/div/span/div/div[2]/div/div",
-            "/html/body/div[6]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div/div[3]/div/div[1]/div/div/span/div/div[2]/div/div",
-            "/html/body/div[5]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div/div[3]/div/div[1]/div/div/span/div/div[2]/div/div"
-            "/html/body/div[7]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div/div[3]/div/div[1]/div/div/div/div[2]/div/div",
-            "/html/body/div[6]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div/div[3]/div/div[1]/div/div/div/div[2]/div/div",
-            "/html/body/div[5]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div/div[3]/div/div[1]/div/div/div/div[2]/div/div"
         ]
         next_btn_xpaths = [
             "/html/body/div[7]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[1]/div/div/div/div[3]/div",
@@ -145,7 +134,6 @@ class InstagramUploader:
             try:
                 WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, upload_btn_xpath)))
                 self.driver.find_element(By.XPATH, upload_btn_xpath).click()
-                time.sleep(2)
             except Exception as e:
                 logging.error(f"Error clicking upload button: {e}")
                 self.driver.quit()
@@ -161,39 +149,12 @@ class InstagramUploader:
                 self.driver.quit()
                 return
 
-            # 파일 업로드 과정 - 사진 1개
+            # 파일 업로드 과정
             logging.info("Uploading first image.")
             time.sleep(5)
-            pyautogui.write(images[0])
+            file_paths_str = ' '.join([f'"{path}"' for path in images])
+            pyautogui.write(file_paths_str)
             pyautogui.press('enter')
-            time.sleep(5)
-
-            if len(images) > 1:
-                logging.info("Uploading additional images.")
-                try:
-                    btn = self.basic_seeker(select_multiple_btn_xpaths)
-                    btn.click()
-                except Exception as e:
-                    logging.error(f"Error clicking select multiple images button: {e}")
-                    self.driver.quit()
-                    return
-
-                time.sleep(2)
-                for i, image in enumerate(images):
-                    if i == 0:
-                        continue
-                    else:
-                        logging.info(f"Uploading image {i+1}.")
-                        try:
-                            btn = self.basic_seeker(add_additional_photo_btn_xpaths)
-                            btn.click()
-                            pyautogui.write(image)
-                            pyautogui.press('enter')
-                        except Exception as e:
-                            logging.error(f"Error clicking add additional photo button for image {i+1}: {e}")
-                            self.driver.quit()
-                            return
-                time.sleep(2)
         
             # 사진 등록 화면
             logging.info("Proceeding to the next step.")
@@ -224,8 +185,7 @@ class InstagramUploader:
             logging.info("Adding post content and hashtags.")
             try:
                 text_input = self.basic_seeker(text_input_xpaths, 'text_input')
-                text_input.send_keys(f'{caption}\n\n\n\n\n\n\n' + hash_Tags)
-                time.sleep(2)
+                text_input.send_keys(f'{caption}\n\n\n\n' + hash_Tags)
             except Exception as e:
                 logging.error(f"Error adding post content and hashtags: {e}")
                 self.driver.quit()

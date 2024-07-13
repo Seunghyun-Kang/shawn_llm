@@ -99,7 +99,7 @@ class InstagramUploader:
                 logging.error(f"Error clicking 'Dismiss' button: {inner_e}")
                 self.driver.quit()
 
-    def upload(self, images):
+    def upload(self, images, caption):
         upload_btn_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[2]/div/div[1]/div/div/div/div/div[2]/div[7]/div/span/div/a/div"
         select_file_xpaths = [
             "/html/body/div[7]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div[2]/div/button",
@@ -218,14 +218,13 @@ class InstagramUploader:
                 return
 
             # 게시글 등록 화면
-            content_text= ""
-            hash_Tags = """#china #chinagirl #korea #korean #chinese #chinesegirl #koreangirl #sexy #beautiful #model #models #kpop #kpop #japan #japangirl #japanese #japanesegirl #jpop #hongkong #taiwan #fashion #beauty #style #idol"""
+            hash_Tags = """#china #chinagirl #korea #korean #chinese #chinesegirl #koreangirl #sexy #beautiful #model #models #kpop #kpop #japan #japangirl #japanese #japanesegirl #fashion #beauty #style #idol"""
     # #culture #travel #photography #lifestyle #trend #music #entertainment #glamour #stars #celebrity #makeup #skincare #asia #asianbeauty #asianfashion #popculture #fanbase #influencer #artist #singer #dancer #performance
 
             logging.info("Adding post content and hashtags.")
             try:
                 text_input = self.basic_seeker(text_input_xpaths, 'text_input')
-                text_input.send_keys(f'{content_text}\n\n\n' + hash_Tags)
+                text_input.send_keys(f'{caption}\n\n\n\n\n\n\n' + hash_Tags)
                 time.sleep(2)
             except Exception as e:
                 logging.error(f"Error adding post content and hashtags: {e}")

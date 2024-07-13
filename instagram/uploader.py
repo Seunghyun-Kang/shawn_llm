@@ -25,6 +25,7 @@ class InstagramUploader:
         self.driver = self.initialize_driver()
 
     def basic_seeker(self, paths, type='click'):
+        element = None
         for path in paths:
             try:
                 # 요소가 클릭 가능해질 때까지 기다림
@@ -79,7 +80,7 @@ class InstagramUploader:
             password_input.send_keys(self.password)
             password_input.send_keys(Keys.RETURN)
             # 로그인 후 Instagram 로고가 보일 때까지 대기
-            time.sleep(5)
+            time.sleep(10)
             logging.info("Logged in to Instagram.")
             self.driver.implicitly_wait(3)
 
@@ -99,12 +100,13 @@ class InstagramUploader:
                 logging.error(f"Error clicking 'Dismiss' button: {inner_e}")
                 self.driver.quit()
 
-    def upload(self, images):
+    def upload(self, images, caption):
+        logging.info(f"caption: {caption}")
         upload_btn_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[2]/div/div[1]/div/div/div/div/div[2]/div[7]/div/span/div/a/div"
         select_file_xpaths = [
             "/html/body/div[7]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div[2]/div/button",
             "/html/body/div[6]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div[2]/div/button",
-            "/html/body/div[5]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div[2]/div/button"
+            "/html/body/div[5]/div[1]/div/div/3/div/div/div/div/div/div/div/div[2]/div[1]/div/div/div[2]/div/button"
         ]
         next_btn_xpaths = [
             "/html/body/div[7]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[1]/div/div/div/div[3]/div",
@@ -122,58 +124,88 @@ class InstagramUploader:
             "/html/body/div[5]/div[1]/div/div[3]/div/div/div/div/div/div/div/div[1]/div/div/div/div[3]/div/div",
         ]
 
-        self.driver.get(f'https://www.instagram.com/{self.username}/')
-        time.sleep(5)
+        try:
+            logging.info("Logging in to Instagram.")
+            self.driver.get(f'https://www.instagram.com/{self.username}/')
+            time.sleep(5)
 
-        # 사진 업로드 버튼 
-        WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, upload_btn_xpath)))
-        self.driver.find_element(By.XPATH, upload_btn_xpath).click()
-        time.sleep(2)
+            # 사진 업로드 버튼 
+            logging.info("Clicking upload button.")
+            try:
+                WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, upload_btn_xpath)))
+                self.driver.find_element(By.XPATH, upload_btn_xpath).click()
+            except Exception as e:
+                logging.error(f"Error clicking upload button: {e}")
+                self.driver.quit()
+                return
 
-        # 파일 업로드 선택 버튼 
-        btn = self.basic_seeker(select_file_xpaths)
-        btn.click()
+            # 파일 업로드 선택 버튼 
+            logging.info("Selecting file upload button.")
+            try:
+                btn = self.basic_seeker(select_file_xpaths)
+                btn.click()
+            except Exception as e:
+                logging.error(f"Error clicking file upload button: {e}")
+                self.driver.quit()
+                return
 
-        # 파일 업로드 과정 - 사진 1개
-        time.sleep(5)
+            # 파일 업로드 과정
+            logging.info("Uploading first image.")
+            time.sleep(5)
+            file_paths_str = ' '.join([f'"{path}"' for path in images])
+            pyautogui.write(file_paths_str)
+            pyautogui.press('enter')
+        
+            # 사진 등록 화면
+            logging.info("Proceeding to the next step.")
+            try:
+                btn = self.basic_seeker(next_btn_xpaths)
+                btn.click()
+                time.sleep(2)
+            except Exception as e:
+                logging.error(f"Error clicking next button after uploading images: {e}")
+                self.driver.quit()
+                return
 
-        current_file_path = os.path.abspath(__file__)
-        current_folder = os.path.dirname(current_file_path)
-        other_file_path = os.path.join(current_folder, images[0])
-        # pyautogui.write(other_file_path)
-        # pyautogui.write(f"C:\\{images[0]}")
-        pyautogui.press('enter')
-        time.sleep(5)
-    
-        # 사진 등록 화면
+            # 보정 설정 화면
+            logging.info("Proceeding to the filter step.")
+            try:
+                btn = self.basic_seeker(next_btn_xpaths)
+                btn.click()
+                time.sleep(2)
+            except Exception as e:
+                logging.error(f"Error clicking next button on filter step: {e}")
+                self.driver.quit()
+                return
 
-        btn = self.basic_seeker(next_btn_xpaths)
-        btn.click()
-        time.sleep(2)
+            # 게시글 등록 화면
+            hash_Tags = """#china #chinagirl #korea #korean #chinese #chinesegirl #koreangirl #sexy #beautiful #model #models #kpop #kpop #japan #japangirl #japanese #japanesegirl #fashion #beauty #style #idol"""
+    # #culture #travel #photography #lifestyle #trend #music #entertainment #glamour #stars #celebrity #makeup #skincare #asia #asianbeauty #asianfashion #popculture #fanbase #influencer #artist #singer #dancer #performance
 
-        # 보정 설정 화면
-        btn = self.basic_seeker(next_btn_xpaths)
-        btn.click()
-        time.sleep(2)
+            logging.info("Adding post content and hashtags.")
+            try:
+                text_input = self.basic_seeker(text_input_xpaths, 'text_input')
+                text_input.send_keys(f'{caption}\n\n\n\n' + hash_Tags)
+            except Exception as e:
+                logging.error(f"Error adding post content and hashtags: {e}")
+                self.driver.quit()
+                return
 
-        # 게시글 등록 화면
-        text_input = self.basic_seeker(text_input_xpaths, 'text_input')
-        text_input.send_keys('test #test')
-        time.sleep(2)
+            # 공유 버튼
+            logging.info("Clicking share button.")
+            try:
+                btn = self.basic_seeker(share_btn_xpaths)
+                btn.click()
+                self.driver.implicitly_wait(2)
+                logging.info("Upload completed and browser closed.")
+            except Exception as e:
+                logging.error(f"Error clicking share button: {e}")
+                self.driver.quit()
+                return
+        
+        except Exception as e:
+            logging.error(f"An unexpected error occurred: {e}")
+            self.driver.quit()
 
-        # 공유 버튼
-        btn = self.basic_seeker(share_btn_xpaths)
-        btn.click()
+        return True
 
-        self.driver.implicitly_wait(5)
-        self.driver.quit()
-    
-def main():
-    uploader = InstagramUploader(account_info.INSTAGRAM_USERNAME2, account_info.INSTAGRAM_PASSWORD2)
-    uploader.login_instagram()
-    
-    images = [f"test.jpeg"]
-    uploader.upload(images)
-
-if __name__ == "__main__":
-    main()
